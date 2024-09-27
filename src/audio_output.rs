@@ -211,13 +211,10 @@ impl<B: Backend> AudioOutput<B> {
         if let Some(channel_state) = self.channels.get_mut(channel) {
             if channel_state.track_handle.is_none() {
                 let track_handle = Self::create_track_handle(self.manager.as_mut().unwrap());
-
                 channel_state.track_handle = Some(track_handle);
-
-                sound = sound.output_destination(channel_state.track_handle.as_ref().unwrap());
-            } else if let Some(track_handle) = &channel_state.track_handle {
-                sound = sound.output_destination(track_handle);
             }
+
+            sound = sound.output_destination(channel_state.track_handle.as_ref().unwrap());
 
             channel_state.apply(&mut sound);
 
