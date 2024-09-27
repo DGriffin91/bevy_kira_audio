@@ -231,6 +231,8 @@ impl<B: Backend> AudioOutput<B> {
                 ..Default::default()
             };
 
+            sound = sound.output_destination(channel_state.track_handle.as_ref().unwrap());
+
             self.channels.insert(channel.clone(), channel_state);
         }
 
