@@ -6,6 +6,7 @@ use crate::instance::AudioInstance;
 use crate::{AudioSource, PlaybackState};
 use bevy::asset::Handle;
 use kira::sound::static_sound::StaticSoundData;
+use kira::track::TrackHandle;
 use kira::tween::Value;
 use kira::Volume;
 use std::any::TypeId;
@@ -21,6 +22,7 @@ pub(crate) struct ChannelState {
     pub(crate) volume: Volume,
     pub(crate) playback_rate: f64,
     pub(crate) panning: f64,
+    pub(crate) track_handle: Option<TrackHandle>,
 }
 
 impl Default for ChannelState {
@@ -30,6 +32,7 @@ impl Default for ChannelState {
             volume: 1.0.into(),
             playback_rate: 1.0,
             panning: 0.5,
+            track_handle: None,
         }
     }
 }

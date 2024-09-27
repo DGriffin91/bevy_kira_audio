@@ -17,6 +17,7 @@ use bevy::ecs::world::{FromWorld, World};
 use bevy::log::warn;
 use kira::manager::backend::{Backend, DefaultBackend};
 use kira::manager::AudioManager;
+use kira::track::{TrackBuilder, TrackHandle};
 use kira::{sound::PlaybackRate, Volume};
 use std::collections::HashMap;
 
@@ -206,14 +207,36 @@ impl<B: Backend> AudioOutput<B> {
         audio_instances: &mut Assets<AudioInstance>,
     ) -> AudioCommandResult {
         let mut sound = audio_source.sound.clone();
-        if let Some(channel_state) = self.channels.get(channel) {
+
+        if let Some(channel_state) = self.channels.get_mut(channel) {
+            if channel_state.track_handle.is_none() {
+                let track_handle = Self::create_track_handle(self.manager.as_mut().unwrap());
+
+                channel_state.track_handle = Some(track_handle);
+
+                sound = sound.output_destination(channel_state.track_handle.as_ref().unwrap());
+            } else if let Some(track_handle) = &channel_state.track_handle {
+                sound = sound.output_destination(track_handle);
+            }
+
             channel_state.apply(&mut sound);
+
             // This is reverted after pausing the sound handle.
             // Otherwise the audio thread will start playing the sound before our pause command goes through.
             if channel_state.paused {
                 sound.settings.playback_rate = kira::tween::Value::Fixed(PlaybackRate::Factor(0.0));
             }
+        } else {
+            let track_handle = Self::create_track_handle(self.manager.as_mut().unwrap());
+
+            let channel_state = ChannelState {
+                track_handle: Some(track_handle),
+                ..Default::default()
+            };
+
+            self.channels.insert(channel.clone(), channel_state);
         }
+
         if partial_sound_settings.paused {
             sound.settings.playback_rate = kira::tween::Value::Fixed(PlaybackRate::Factor(0.0));
         }
@@ -372,6 +395,12 @@ impl<B: Backend> AudioOutput<B> {
                 }
             });
         }
+    }
+
+    fn create_track_handle(manager: &mut AudioManager<B>) -> TrackHandle {
+        let track_builder = TrackBuilder::new();
+
+        manager.add_sub_track(track_builder).unwrap()
     }
 }
 
